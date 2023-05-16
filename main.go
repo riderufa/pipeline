@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -62,13 +62,13 @@ func read(input chan<- int, done chan bool) {
 	for scanner.Scan() {
 		data := scanner.Text()
 		if strings.EqualFold(data, "exit") {
-			fmt.Println("The program has ended")
+			log.Println("The program has ended")
 			close(done)
 			return
 		}
 		i, err := strconv.Atoi(data)
 		if err != nil {
-			fmt.Println("The program only accepts integers")
+			log.Println("The program only accepts integers")
 			continue
 		}
 		input <- i
@@ -81,6 +81,8 @@ func negativeFilter(input <-chan int, output chan<- int, done <-chan bool) {
 		case data := <-input:
 			if data >= 0 {
 				output <- data
+			} else {
+				log.Println("Filtered by negative filter", data)
 			}
 		case <-done:
 			return
@@ -94,6 +96,8 @@ func notDividedThreeFilter(input <-chan int, output chan<- int, done <-chan bool
 		case data := <-input:
 			if data%3 == 0 {
 				output <- data
+			} else {
+				log.Println("Filtered by not divided three filter", data)
 			}
 		case <-done:
 			return
@@ -129,12 +133,15 @@ func (r *RingBuffer) bufferStage(input <-chan int, output chan<- int, done <-cha
 func main() {
 	input := make(chan int)
 	done := make(chan bool)
+	log.Println("Start input data stage")
 	go read(input, done)
 
 	negativeFiltered := make(chan int)
+	log.Println("Start negative filter stage")
 	go negativeFilter(input, negativeFiltered, done)
 
 	notDividedThreeFiltered := make(chan int)
+	log.Println("Start not divided filter stage")
 	go notDividedThreeFilter(negativeFiltered, notDividedThreeFiltered, done)
 
 	buffer := NewRingBuffer(10, 10*time.Second)
@@ -144,7 +151,7 @@ func main() {
 	for {
 		select {
 		case data := <-buffered:
-			fmt.Println("Processed data, ", data)
+			log.Println("Processed data, ", data)
 		case <-done:
 			return
 		}
