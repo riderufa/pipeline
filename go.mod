@@ -1,3 +1,3 @@
-module module_20
+module pipeline
 
 go 1.19
